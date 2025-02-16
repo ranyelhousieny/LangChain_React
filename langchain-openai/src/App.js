@@ -5,9 +5,9 @@ import {
   List, ListItem, ListItemText, Paper 
 } from "@mui/material";
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
+import { RunnableSequence } from "@langchain/core/runnables";
 import { BufferMemory } from "langchain/memory";
-import { ConversationChain } from "langchain/chains";
 
 function App() {
   // State variables
@@ -16,33 +16,44 @@ function App() {
   const [topic, setTopic] = useState("programming"); // Topic for the joke
   const [style, setStyle] = useState("dad-joke"); // Style of the joke
   const [previousJokes, setPreviousJokes] = useState([]); // Store previous jokes
-  const [chain, setChain] = useState(null); // Store the conversation chain
+  const [chain, setChain] = useState(null); // Store the LLM chain with memory
 
-  // Initialize the conversation chain with memory when API key is set
+  // Initialize chain with memory when API key is set
   useEffect(() => {
     if (apiKey) {
-      // Create a new ChatOpenAI instance with GPT-4-turbo
       const model = new ChatOpenAI({
         openAIApiKey: apiKey,
-        modelName: "gpt-4-0125-preview", // Using GPT-4-turbo
-        temperature: 0.9, // Increase creativity
+        modelName: "gpt-3.5-turbo", // Using a known working model
+        temperature: 0.9,
       });
 
-      // Initialize memory to store conversation history
+      // Create a prompt template that includes memory context
+      const prompt = ChatPromptTemplate.fromMessages([
+        ["system", "You are a comedian specialized in {style}. Keep jokes clean and family-friendly."],
+        new MessagesPlaceholder("history"),
+        ["human", "Tell me a {style} about {topic}. Make it unique and different from our previous jokes."]
+      ]);
+
+      // Initialize memory
       const memory = new BufferMemory({
         returnMessages: true,
-        memoryKey: "history", // Key to store memory in the chain
-        inputKey: "input", // Key for new inputs
-        outputKey: "output", // Key for model outputs
+        memoryKey: "history",
+        inputKey: "input",
       });
 
-      // Create a conversation chain with memory
-      const conversationChain = new ConversationChain({
-        memory: memory,
-        llm: model,
-      });
+      // Create chain
+      const chain = RunnableSequence.from([
+        {
+          input: (input) => input.input,
+          history: async () => memory.loadMemoryVariables({}).then(vars => vars.history || []),
+          style: (input) => input.style,
+          topic: (input) => input.topic,
+        },
+        prompt,
+        model,
+      ]);
 
-      setChain(conversationChain);
+      setChain({ chain, memory });
     }
   }, [apiKey]);
 
@@ -61,7 +72,7 @@ function App() {
     setStyle(event.target.value);
   };
 
-  // Generate a new joke using conversation chain and memory
+  // Generate a new joke using LLM chain with memory
   const handleTellJoke = async () => {
     if (!apiKey || !chain) {
       alert("Please enter your OpenAI API key.");
@@ -69,24 +80,22 @@ function App() {
     }
 
     try {
-      // Create a prompt that includes context about previous jokes
-      const prompt = `Generate a new ${style} about ${topic}. 
-        Make it unique and different from these previous jokes: 
-        ${previousJokes.join('\n')}. 
-        Keep it clean, family-friendly, and original.`;
+      const input = {
+        style: style,
+        topic: topic,
+        input: `Generate a new ${style} about ${topic}`,
+      };
 
-      // Use the conversation chain to generate a response
-      const response = await chain.call({
-        input: prompt,
-      });
+      const response = await chain.chain.invoke(input);
+      const newJoke = response.content;
 
-      // Extract the joke from the response
-      const newJoke = response.output;
+      // Store in memory
+      await chain.memory.saveContext(
+        { input: input.input },
+        { output: newJoke }
+      );
 
-      // Update state with new joke
       setJoke(newJoke);
-      
-      // Add to previous jokes list
       setPreviousJokes(prev => [...prev, newJoke]);
     } catch (error) {
       console.error("Error calling OpenAI:", error);

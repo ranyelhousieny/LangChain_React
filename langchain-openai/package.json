@@ -5,13 +5,12 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@langchain/community": "^0.3.30",
     "@langchain/core": "^0.3.40",
     "@langchain/openai": "^0.4.4",
     "@mui/material": "^6.4.4",
     "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
-    "@testing-library/user-event": "^13.5.0",
     "langchain": "^0.3.15",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -41,5 +40,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/user-event": "^14.6.1"
   }
 }
