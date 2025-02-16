@@ -1,17 +1,30 @@
 import React, { useState } from "react";
-import { Button, TextField, Typography, Container, Box } from "@mui/material";
+import { Button, TextField, Typography, Container, Box, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import { ChatOpenAI } from "@langchain/openai";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 
 function App() {
   const [apiKey, setApiKey] = useState(""); // Stores OpenAI API key
   const [joke, setJoke] = useState(""); // Stores AI-generated joke
+  const [topic, setTopic] = useState("programming"); // Topic for the joke
+  const [style, setStyle] = useState("dad-joke"); // Style of the joke
 
   // Handle API key input
   const handleApiKeyChange = (event) => {
     setApiKey(event.target.value);
   };
 
-  // Call OpenAI using LangChain
+  // Handle topic selection
+  const handleTopicChange = (event) => {
+    setTopic(event.target.value);
+  };
+
+  // Handle style selection
+  const handleStyleChange = (event) => {
+    setStyle(event.target.value);
+  };
+
+  // Call OpenAI using LangChain with Prompt Templates
   const handleTellJoke = async () => {
     if (!apiKey) {
       alert("Please enter your OpenAI API key.");
@@ -19,16 +32,26 @@ function App() {
     }
 
     const model = new ChatOpenAI({
-      openAIApiKey: apiKey, // Provide the API key
-      modelName: "gpt-4", // Choose model
+      openAIApiKey: apiKey,
+      modelName: "gpt-4",
     });
 
+    // Create a prompt template
+    const promptTemplate = ChatPromptTemplate.fromMessages([
+      ["system", "You are a comedian specialized in {style}. Keep jokes clean and family-friendly."],
+      ["user", "Tell me a {style} about {topic}. Make it short and punchy."]
+    ]);
+
     try {
-      const response = await model.invoke([
-        { role: "system", content: "You are a funny comedian. Keep jokes clean and family-friendly." },
-        { role: "user", content: "Tell me a funny joke." }
-      ]);
-      setJoke(response.content); // Display the AI-generated joke
+      // Format the prompt with our variables
+      const formattedPrompt = await promptTemplate.formatMessages({
+        style: style,
+        topic: topic
+      });
+
+      // Send the formatted prompt to the model
+      const response = await model.invoke(formattedPrompt);
+      setJoke(response.content);
     } catch (error) {
       console.error("Error calling OpenAI:", error);
       setJoke("Failed to get a joke. Check API key.");
@@ -38,8 +61,42 @@ function App() {
   return (
     <Container maxWidth="sm" style={{ marginTop: "20px" }}>
       <Typography variant="h4" align="center" gutterBottom>
-        LangChain Joke Generator 🤖
+        LangChain Prompt Template Joke Generator 🤖
       </Typography>
+      <Typography variant="body1" align="center" gutterBottom>
+        Using prompt templates to generate customized jokes
+      </Typography>
+
+      {/* Joke Configuration */}
+      <Box marginBottom="20px" display="flex" gap={2}>
+        <FormControl fullWidth>
+          <InputLabel>Topic</InputLabel>
+          <Select
+            value={topic}
+            label="Topic"
+            onChange={handleTopicChange}
+          >
+            <MenuItem value="programming">Programming</MenuItem>
+            <MenuItem value="food">Food</MenuItem>
+            <MenuItem value="animals">Animals</MenuItem>
+            <MenuItem value="sports">Sports</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth>
+          <InputLabel>Style</InputLabel>
+          <Select
+            value={style}
+            label="Style"
+            onChange={handleStyleChange}
+          >
+            <MenuItem value="dad-joke">Dad Joke</MenuItem>
+            <MenuItem value="pun">Pun</MenuItem>
+            <MenuItem value="one-liner">One-liner</MenuItem>
+            <MenuItem value="knock-knock">Knock-knock</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
       {/* API Key Input */}
       <Box marginBottom="20px">
