@@ -1,13 +1,50 @@
-import React, { useState } from "react";
-import { Button, TextField, Typography, Container, Box, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { 
+  Button, TextField, Typography, Container, Box, 
+  Select, MenuItem, FormControl, InputLabel,
+  List, ListItem, ListItemText, Paper 
+} from "@mui/material";
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { BufferMemory } from "langchain/memory";
+import { ConversationChain } from "langchain/chains";
 
 function App() {
+  // State variables
   const [apiKey, setApiKey] = useState(""); // Stores OpenAI API key
   const [joke, setJoke] = useState(""); // Stores AI-generated joke
   const [topic, setTopic] = useState("programming"); // Topic for the joke
   const [style, setStyle] = useState("dad-joke"); // Style of the joke
+  const [previousJokes, setPreviousJokes] = useState([]); // Store previous jokes
+  const [chain, setChain] = useState(null); // Store the conversation chain
+
+  // Initialize the conversation chain with memory when API key is set
+  useEffect(() => {
+    if (apiKey) {
+      // Create a new ChatOpenAI instance with GPT-4-turbo
+      const model = new ChatOpenAI({
+        openAIApiKey: apiKey,
+        modelName: "gpt-4-0125-preview", // Using GPT-4-turbo
+        temperature: 0.9, // Increase creativity
+      });
+
+      // Initialize memory to store conversation history
+      const memory = new BufferMemory({
+        returnMessages: true,
+        memoryKey: "history", // Key to store memory in the chain
+        inputKey: "input", // Key for new inputs
+        outputKey: "output", // Key for model outputs
+      });
+
+      // Create a conversation chain with memory
+      const conversationChain = new ConversationChain({
+        memory: memory,
+        llm: model,
+      });
+
+      setChain(conversationChain);
+    }
+  }, [apiKey]);
 
   // Handle API key input
   const handleApiKeyChange = (event) => {
@@ -24,34 +61,33 @@ function App() {
     setStyle(event.target.value);
   };
 
-  // Call OpenAI using LangChain with Prompt Templates
+  // Generate a new joke using conversation chain and memory
   const handleTellJoke = async () => {
-    if (!apiKey) {
+    if (!apiKey || !chain) {
       alert("Please enter your OpenAI API key.");
       return;
     }
 
-    const model = new ChatOpenAI({
-      openAIApiKey: apiKey,
-      modelName: "gpt-4",
-    });
-
-    // Create a prompt template
-    const promptTemplate = ChatPromptTemplate.fromMessages([
-      ["system", "You are a comedian specialized in {style}. Keep jokes clean and family-friendly."],
-      ["user", "Tell me a {style} about {topic}. Make it short and punchy."]
-    ]);
-
     try {
-      // Format the prompt with our variables
-      const formattedPrompt = await promptTemplate.formatMessages({
-        style: style,
-        topic: topic
+      // Create a prompt that includes context about previous jokes
+      const prompt = `Generate a new ${style} about ${topic}. 
+        Make it unique and different from these previous jokes: 
+        ${previousJokes.join('\n')}. 
+        Keep it clean, family-friendly, and original.`;
+
+      // Use the conversation chain to generate a response
+      const response = await chain.call({
+        input: prompt,
       });
 
-      // Send the formatted prompt to the model
-      const response = await model.invoke(formattedPrompt);
-      setJoke(response.content);
+      // Extract the joke from the response
+      const newJoke = response.output;
+
+      // Update state with new joke
+      setJoke(newJoke);
+      
+      // Add to previous jokes list
+      setPreviousJokes(prev => [...prev, newJoke]);
     } catch (error) {
       console.error("Error calling OpenAI:", error);
       setJoke("Failed to get a joke. Check API key.");
@@ -59,7 +95,7 @@ function App() {
   };
 
   return (
-    <Container maxWidth="sm" style={{ marginTop: "20px" }}>
+    <Container maxWidth="md" style={{ marginTop: "20px" }}>
       <Typography variant="h4" align="center" gutterBottom>
         LangChain Prompt Template Joke Generator 🤖
       </Typography>
@@ -115,11 +151,32 @@ function App() {
         Tell Me a Joke
       </Button>
 
-      {/* Display Joke */}
+      {/* Display Current Joke */}
       {joke && (
         <Box marginTop="20px">
-          <Typography variant="h6">Generated Joke:</Typography>
-          <Typography variant="body1">{joke}</Typography>
+          <Typography variant="h6">Latest Generated Joke:</Typography>
+          <Paper elevation={3} style={{ padding: '15px', marginTop: '10px' }}>
+            <Typography variant="body1">{joke}</Typography>
+          </Paper>
+        </Box>
+      )}
+
+      {/* Display Previous Jokes */}
+      {previousJokes.length > 0 && (
+        <Box marginTop="20px">
+          <Typography variant="h6">Previous Jokes:</Typography>
+          <Paper elevation={2} style={{ maxHeight: '200px', overflow: 'auto', marginTop: '10px' }}>
+            <List>
+              {previousJokes.slice(0, -1).reverse().map((prevJoke, index) => (
+                <ListItem key={index} divider>
+                  <ListItemText 
+                    primary={prevJoke}
+                    secondary={`Joke #${previousJokes.length - 1 - index}`}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
         </Box>
       )}
     </Container>
