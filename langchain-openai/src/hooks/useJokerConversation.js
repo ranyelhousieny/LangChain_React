@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { jokerService } from '../services/jokerService';
 
-export const useJokerConversation = () => {
+export const useJokerConversation = (apiKey) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = async (message) => {
     try {
       setIsLoading(true);
-      const response = await jokerService.sendMessage(message);
+      const response = await jokerService.sendMessage(message, apiKey);
       return response;
     } catch (error) {
       console.error('Error in Joker conversation:', error);

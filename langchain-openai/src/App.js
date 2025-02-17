@@ -7,8 +7,6 @@ function App() {
 
   const handleApiKeyChange = (event) => {
     setApiKey(event.target.value);
-    // In a real application, you'd want to store this securely
-    process.env.OPENAI_API_KEY = event.target.value;
   };
 
   return (
@@ -31,7 +29,7 @@ function App() {
 
       {/* Joker Chat Component */}
       {apiKey ? (
-        <JokerChat />
+        <JokerChat apiKey={apiKey} />
       ) : (
         <Typography variant="body1" align="center">
           Enter your API key to start chatting with The Joker

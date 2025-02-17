@@ -1,57 +1,82 @@
-import { ConversationChain } from "langchain/chains";
-import { ChatOpenAI } from "langchain/chat_models/openai";
-import { BufferMemory } from "langchain/memory";
-import {
-  ChatPromptTemplate,
-  HumanMessagePromptTemplate,
-  SystemMessagePromptTemplate,
-  MessagesPlaceholder,
-} from "langchain/prompts";
+import { ChatOpenAI } from "@langchain/openai";
 
 class JokerService {
   constructor() {
-    this.initializeChain();
+    this.messages = [];
+    this.apiKey = null;
   }
 
-  async initializeChain() {
-    const chat = new ChatOpenAI({
+  initializeChat(apiKey) {
+    if (!apiKey) {
+      throw new Error('API key is required to initialize chat');
+    }
+
+    this.apiKey = apiKey;
+    this.chat = new ChatOpenAI({
       temperature: 0.9,
-      modelName: "gpt-3.5-turbo",
+      modelName: "gpt-4-1106-preview", // Using gpt-4-1106-preview as gpt-4-mini is not a valid model name
+      openAIApiKey: apiKey
     });
 
-    const prompt = ChatPromptTemplate.fromPromptMessages([
-      SystemMessagePromptTemplate.fromTemplate(
-        "You are The Joker from Batman. You embody the chaotic, unpredictable, and darkly humorous nature of the character. " +
-        "Your responses should reflect The Joker's personality: witty, sarcastic, and always with a touch of madness. " +
-        "Use Joker's iconic phrases and mannerisms, but create original responses. " +
-        "Never break character, and always maintain The Joker's perspective on chaos and order."
-      ),
-      new MessagesPlaceholder("history"),
-      HumanMessagePromptTemplate.fromTemplate("{input}"),
-    ]);
-
-    this.chain = new ConversationChain({
-      memory: new BufferMemory({ returnMessages: true, memoryKey: "history" }),
-      prompt: prompt,
-      llm: chat,
-    });
+    // Add the system message to set The Joker's personality
+    this.messages = [{
+      role: "system",
+      content: "You are The Joker from Batman. You embody the chaotic, unpredictable, and darkly humorous nature of the character. " +
+               "Your responses should reflect The Joker's personality: witty, sarcastic, and always with a touch of madness. " +
+               "Use Joker's iconic phrases and mannerisms, but create original responses. " +
+               "Never break character, and always maintain The Joker's perspective on chaos and order."
+    }];
   }
 
-  async sendMessage(message) {
+  validateState() {
+    if (!this.chat || !this.apiKey) {
+      throw new Error('Chat not initialized. Call initializeChat with a valid API key first.');
+    }
+  }
+
+  async sendMessage(message, apiKey) {
     try {
-      if (!this.chain) {
-        await this.initializeChain();
+      if (!message || typeof message !== 'string' || message.trim().length === 0) {
+        throw new Error('Message is required and must be a non-empty string');
       }
+
+      if (!this.chat || this.apiKey !== apiKey) {
+        this.initializeChat(apiKey);
+      }
+
+      this.validateState();
+
+      // Add the user's message to the conversation
+      this.messages.push({
+        role: "user",
+        content: message
+      });
       
-      const response = await this.chain.call({
-        input: message,
+      // Get the response from the model
+      const response = await this.chat.invoke(this.messages);
+
+      // Add the assistant's response to the conversation history
+      this.messages.push({
+        role: "assistant",
+        content: response.content
       });
 
-      return response.response;
+      return response.content;
     } catch (error) {
       console.error('Error in Joker service:', error);
       throw error;
     }
+  }
+
+  // Method to clear conversation history
+  clearConversation() {
+    const systemMessage = this.messages[0];
+    this.messages = [systemMessage];
+  }
+
+  // Method to get conversation history
+  getConversationHistory() {
+    return this.messages.slice(1); // Return all messages except the system message
   }
 }
 

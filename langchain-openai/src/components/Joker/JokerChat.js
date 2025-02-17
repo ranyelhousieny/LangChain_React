@@ -3,9 +3,9 @@ import { useJokerConversation } from '../../hooks/useJokerConversation';
 import ChatInput from '../Chat/ChatInput';
 import ChatMessages from '../Chat/ChatMessages';
 
-const JokerChat = () => {
+const JokerChat = ({ apiKey }) => {
   const [messages, setMessages] = useState([]);
-  const { sendMessage, isLoading } = useJokerConversation();
+  const { sendMessage, isLoading } = useJokerConversation(apiKey);
 
   const handleSendMessage = async (message) => {
     setMessages(prev => [...prev, { role: 'user', content: message }]);
