@@ -1,29 +1,26 @@
-# LangChain React - The Joker Edition
+# LangChain React Application
 
-A React application that implements LangChain.js with a fun twist - conversations with The Joker! This implementation demonstrates how to create engaging AI characters using LangChain and OpenAI.
+A React application that implements LangChain.js to create interactive AI-powered conversations. This implementation demonstrates how to effectively use LangChain with React in a browser environment.
 
 ## Project Structure
 
 ```
-langchain-openai/
-├── src/
-│   ├── components/
-│   │   ├── Joker/     # Joker-specific components
-│   │   └── Chat/      # Chat interface components
-│   ├── services/      # LangChain and API services
-│   ├── hooks/         # Custom React hooks
-│   ├── utils/         # Helper functions
-│   └── App.js         # Main application component
-└── public/            # Static assets
+src/
+├── components/    # React components
+├── services/     # LangChain and API services
+├── hooks/        # Custom React hooks
+├── utils/        # Helper functions and utilities
+├── config/       # Configuration files
+└── App.js        # Main application component
 ```
 
 ## Features
 
 - Browser-based LangChain.js implementation
-- Joker-themed chat interface
-- Character-based conversation
+- Modular and organized code structure
+- Custom React hooks for LangChain integration
 - Direct OpenAI API integration
-- Custom prompt engineering for The Joker's personality
+- Reusable components and services
 
 ## Getting Started
 
@@ -32,6 +29,11 @@ langchain-openai/
 3. Set up your OpenAI API key
 4. Run the development server: `npm start`
 
-## Character Implementation
+## Development
 
-The Joker's personality is implemented using carefully crafted prompts and conversation memory to maintain consistent character traits throughout the interaction.
+The project follows a modular structure where:
+- Components are isolated and reusable
+- Services handle LangChain and API interactions
+- Hooks manage state and LangChain logic
+- Utils provide helper functions
+- Config stores environment variables and settings
