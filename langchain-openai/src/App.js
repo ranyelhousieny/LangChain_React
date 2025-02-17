@@ -1,44 +1,20 @@
 import React, { useState } from "react";
-import { Button, TextField, Typography, Container, Box } from "@mui/material";
-import { ChatOpenAI } from "@langchain/openai";
+import { TextField, Typography, Container, Box } from "@mui/material";
+import JokerChat from './components/Joker/JokerChat';
 
 function App() {
-  const [apiKey, setApiKey] = useState(""); // Stores OpenAI API key
-  const [joke, setJoke] = useState(""); // Stores AI-generated joke
+  const [apiKey, setApiKey] = useState("");
 
-  // Handle API key input
   const handleApiKeyChange = (event) => {
     setApiKey(event.target.value);
-  };
-
-  // Call OpenAI using LangChain
-  const handleTellJoke = async () => {
-    if (!apiKey) {
-      alert("Please enter your OpenAI API key.");
-      return;
-    }
-
-    const model = new ChatOpenAI({
-      openAIApiKey: apiKey, // Provide the API key
-      modelName: "gpt-4", // Choose model
-    });
-
-    try {
-      const response = await model.invoke([
-        { role: "system", content: "You are a funny comedian. Keep jokes clean and family-friendly." },
-        { role: "user", content: "Tell me a funny joke." }
-      ]);
-      setJoke(response.content); // Display the AI-generated joke
-    } catch (error) {
-      console.error("Error calling OpenAI:", error);
-      setJoke("Failed to get a joke. Check API key.");
-    }
+    // In a real application, you'd want to store this securely
+    process.env.OPENAI_API_KEY = event.target.value;
   };
 
   return (
-    <Container maxWidth="sm" style={{ marginTop: "20px" }}>
+    <Container maxWidth="md" style={{ marginTop: "20px" }}>
       <Typography variant="h4" align="center" gutterBottom>
-        LangChain Joke Generator 🤖
+        The Joker's Chat Room 🃏
       </Typography>
 
       {/* API Key Input */}
@@ -53,17 +29,13 @@ function App() {
         />
       </Box>
 
-      {/* Joke Button */}
-      <Button variant="contained" color="primary" onClick={handleTellJoke} fullWidth>
-        Tell Me a Joke
-      </Button>
-
-      {/* Display Joke */}
-      {joke && (
-        <Box marginTop="20px">
-          <Typography variant="h6">Generated Joke:</Typography>
-          <Typography variant="body1">{joke}</Typography>
-        </Box>
+      {/* Joker Chat Component */}
+      {apiKey ? (
+        <JokerChat />
+      ) : (
+        <Typography variant="body1" align="center">
+          Enter your API key to start chatting with The Joker
+        </Typography>
       )}
     </Container>
   );
