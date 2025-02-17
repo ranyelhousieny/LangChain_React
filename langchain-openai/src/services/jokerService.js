@@ -14,7 +14,7 @@ class JokerService {
     this.apiKey = apiKey;
     this.chat = new ChatOpenAI({
       temperature: 0.9,
-      modelName: "gpt-4-1106-preview", // Using gpt-4-1106-preview as gpt-4-mini is not a valid model name
+      modelName: "gpt-4o-mini",
       openAIApiKey: apiKey
     });
 

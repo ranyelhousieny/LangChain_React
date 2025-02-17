@@ -30,7 +30,7 @@ describe('JokerService', () => {
       
       expect(ChatOpenAI).toHaveBeenCalledWith({
         temperature: 0.9,
-        modelName: "gpt-4-1106-preview",
+        modelName: "gpt-4o-mini",
         openAIApiKey: mockApiKey
       });
     });
