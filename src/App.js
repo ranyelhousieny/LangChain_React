@@ -11,7 +11,7 @@ function App() {
     try {
       setLoading(true);
       const chat = new ChatOpenAI({ 
-        modelName: "gpt-4",
+        modelName: "gpt-4o-mini",
         openAIApiKey: process.env.REACT_APP_OPENAI_API_KEY
       });
       
